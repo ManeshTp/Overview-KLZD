@@ -44,13 +44,20 @@
 
     .login-form { display: flex; flex-direction: column; gap: 15px; }
     .login-input-group { position: relative; }
+    
+    /* Adjusted padding to accommodate icons on both left and right */
     .login-input-group input {
-      width: 100%; padding: 12px 16px 12px 45px; background: rgba(255, 255, 255, 0.08);
+      width: 100%; padding: 12px 45px; background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; color: #fff;
       font-size: 1rem; outline: none; transition: all 0.3s ease;
     }
     .login-input-group input:focus { border-color: #3b82f6; background: rgba(255, 255, 255, 0.12); box-shadow: 0 0 10px rgba(59, 130, 246, 0.3); }
-    .login-input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 1.1rem; }
+    
+    /* Dedicated classes for left and right icons */
+    .login-input-group .left-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 1.1rem; }
+    .login-input-group .right-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 1.1rem; cursor: pointer; transition: color 0.2s; }
+    .login-input-group .right-icon:hover { color: #fff; }
+
     .btn-login {
       background: #2563eb; color: #ffffff; padding: 12px; border-radius: 10px;
       font-weight: 600; border: none; cursor: pointer; transition: background 0.3s; font-size: 1rem;
@@ -166,9 +173,11 @@
       </div>
 
       <form class="login-form" onsubmit="handleLogin(event)">
+        <!-- Updated input group with show password icon -->
         <div class="login-input-group">
-          <i class="fa-solid fa-key"></i>
+          <i class="fa-solid fa-key left-icon"></i>
           <input type="password" id="accessPin" placeholder="Enter Access Password" required autocomplete="current-password">
+          <i class="fa-solid fa-eye right-icon" id="toggleLoginPwIcon" onclick="toggleLoginPassword()"></i>
         </div>
         <button type="submit" class="btn-login" id="loginBtn">Login to User Dashboard</button>
         <div class="login-error" id="loginError">Incorrect password. Please try again.</div>
@@ -371,15 +380,25 @@
   </div>
 
   <script>
-    // Initialize default credentials in localStorage if not already present
-    if (!localStorage.getItem('klzd_user_pw')) {
-      localStorage.setItem('klzd_user_pw', 'user123');
-    }
-    if (!localStorage.getItem('klzd_admin_pw')) {
-      localStorage.setItem('klzd_admin_pw', 'Manesh.123');
-    }
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwc44uyExWlEBtV_ExO3ywIKRxqP6NHtu-b_NAUt-VC2HBAkWD5ZSTUhd4D3jqQ0dDr/exec';
 
     let currentSelectedRole = 'user';
+
+    // New function to toggle the password visibility on the login screen
+    function toggleLoginPassword() {
+      const pwdInput = document.getElementById('accessPin');
+      const toggleIcon = document.getElementById('toggleLoginPwIcon');
+      
+      if (pwdInput.type === 'password') {
+        pwdInput.type = 'text';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+      } else {
+        pwdInput.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+      }
+    }
 
     function switchLoginRole(role) {
       currentSelectedRole = role;
@@ -408,7 +427,6 @@
       }
     }
 
-    // Check session on page load
     window.addEventListener('DOMContentLoaded', () => {
       const activeRole = sessionStorage.getItem('klzd_auth');
       if (activeRole) {
@@ -431,7 +449,6 @@
         badgeDisplay.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Admin Mode';
         badgeDisplay.style.background = '#2563eb';
         
-        // Show Admin controls
         if(addAssocBtn) addAssocBtn.style.display = 'inline-flex';
         if(editAssocBtn) editAssocBtn.style.display = 'inline-flex';
         if(deleteAssocBtn) deleteAssocBtn.style.display = 'inline-flex';
@@ -440,55 +457,86 @@
         badgeDisplay.innerHTML = '<i class="fa-solid fa-circle-check"></i> Hub Active';
         badgeDisplay.style.background = '#10b981';
 
-        // Hide Admin controls for normal Users
         if(addAssocBtn) addAssocBtn.style.display = 'none';
         if(editAssocBtn) editAssocBtn.style.display = 'none';
         if(deleteAssocBtn) deleteAssocBtn.style.display = 'none';
       }
     }
 
-    function handleLogin(event) {
+    async function handleLogin(event) {
       event.preventDefault();
       const errorEl = document.getElementById('loginError');
       const enteredPassword = document.getElementById('accessPin').value;
+      const loginBtn = document.getElementById('loginBtn');
 
-      const targetPw = currentSelectedRole === 'admin' 
-        ? localStorage.getItem('klzd_admin_pw') 
-        : localStorage.getItem('klzd_user_pw');
+      loginBtn.innerText = "Verifying...";
+      loginBtn.disabled = true;
 
-      if (enteredPassword === targetPw) {
-        sessionStorage.setItem('klzd_auth', currentSelectedRole);
-        applyAppAccess(currentSelectedRole);
-        errorEl.style.display = 'none';
-      } else {
-        errorEl.style.display = 'block';
-        document.getElementById('accessPin').value = '';
+      try {
+        const response = await fetch(`${SCRIPT_URL}?action=verifyLogin&role=${currentSelectedRole}&password=${encodeURIComponent(enteredPassword)}`);
+        const result = await response.json();
+
+        if (result.success) {
+          sessionStorage.setItem('klzd_auth', currentSelectedRole);
+          applyAppAccess(currentSelectedRole);
+          errorEl.style.display = 'none';
+        } else {
+          errorEl.style.display = 'block';
+          document.getElementById('accessPin').value = '';
+        }
+      } catch (err) {
+        console.error("Login check failed:", err);
+        alert("Network error. Could not verify credentials with the server.");
+      } finally {
+        loginBtn.innerText = currentSelectedRole === 'admin' ? "Login to Admin Dashboard" : "Login to User Dashboard";
+        loginBtn.disabled = false;
       }
     }
 
-    function updatePassword(targetRole) {
-      if (targetRole === 'user') {
-        const val = document.getElementById('newUserPw').value.trim();
-        if (!val) {
-          alert('Please enter a valid password for User.');
-          return;
+    async function updatePassword(targetRole) {
+      const inputId = targetRole === 'user' ? 'newUserPw' : 'newAdminPw';
+      const msgId = targetRole === 'user' ? 'userUpdateMsg' : 'adminUpdateMsg';
+      const val = document.getElementById(inputId).value.trim();
+
+      if (!val) {
+        alert(`Please enter a valid new password for ${targetRole}.`);
+        return;
+      }
+
+      const btn = document.getElementById(inputId).nextElementSibling;
+      const originalText = btn.innerText;
+      btn.innerText = "Updating...";
+      btn.disabled = true;
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8',
+          },
+          body: JSON.stringify({
+            action: 'updatePassword',
+            role: targetRole,
+            newPassword: val
+          })
+        });
+        
+        const result = await response.json();
+
+        if (result.success) {
+          document.getElementById(inputId).value = '';
+          const msg = document.getElementById(msgId);
+          msg.style.display = 'block';
+          setTimeout(() => msg.style.display = 'none', 3000);
+        } else {
+          alert("Failed to update password on the server.");
         }
-        localStorage.setItem('klzd_user_pw', val);
-        document.getElementById('newUserPw').value = '';
-        const msg = document.getElementById('userUpdateMsg');
-        msg.style.display = 'block';
-        setTimeout(() => msg.style.display = 'none', 3000);
-      } else {
-        const val = document.getElementById('newAdminPw').value.trim();
-        if (!val) {
-          alert('Please enter a valid password for Admin.');
-          return;
-        }
-        localStorage.setItem('klzd_admin_pw', val);
-        document.getElementById('newAdminPw').value = '';
-        const msg = document.getElementById('adminUpdateMsg');
-        msg.style.display = 'block';
-        setTimeout(() => msg.style.display = 'none', 3000);
+      } catch (err) {
+        console.error("Password update failed:", err);
+        alert("Network error while trying to update the password.");
+      } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
       }
     }
 
@@ -497,9 +545,15 @@
       document.getElementById('mainApp').style.display = 'none';
       document.getElementById('loginScreen').style.display = 'flex';
       switchLoginRole('user');
+      
+      // Reset the password input field back to normal
+      const pwdInput = document.getElementById('accessPin');
+      const toggleIcon = document.getElementById('toggleLoginPwIcon');
+      pwdInput.type = 'password';
+      toggleIcon.classList.remove('fa-eye-slash');
+      toggleIcon.classList.add('fa-eye');
     }
 
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwc44uyExWlEBtV_ExO3ywIKRxqP6NHtu-b_NAUt-VC2HBAkWD5ZSTUhd4D3jqQ0dDr/exec';
     let allAssociates = [];
     let activeAssociateIdx = null;
     let currentPhotoBase64 = '';
@@ -571,20 +625,28 @@
       }
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      // Increased timeout to 8 seconds
+      const timeoutId = setTimeout(() => controller.abort(), 8000); 
 
-      fetch(SCRIPT_URL, { signal: controller.signal })
+      // CACHE BUSTER: Adds a unique timestamp to the URL so the browser NEVER caches the old list
+      const fetchUrl = `${SCRIPT_URL}?t=${new Date().getTime()}`;
+
+      fetch(fetchUrl, { signal: controller.signal })
         .then(res => res.json())
         .then(response => {
           clearTimeout(timeoutId);
-          if (response.status === 'success' && response.data.length > 0) {
+          if (response.status === 'success' && response.data) {
             allAssociates = response.data;
             localStorage.setItem('klzd_associates', JSON.stringify(allAssociates));
+            renderCards(allAssociates);
+          } else {
+            // Fallback in case of an unexpected response format
             renderCards(allAssociates);
           }
         })
         .catch(err => {
           console.warn('Sync issue or timeout. Using local cache.', err);
+          // If network fails, safely load what is available in local storage
           renderCards(allAssociates);
         });
     }
