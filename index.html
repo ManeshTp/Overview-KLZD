@@ -269,6 +269,13 @@
             <div class="card-desc">View employee off schedules and leave management roster.</div>
           </a>
 
+          <!-- Card 7: Ageing/HFRD Tracker -->
+          <a href="https://maneshtp.github.io/Ageing-HFRD-Tracker/" target="_blank" rel="noopener noreferrer" class="dashboard-card">
+            <div class="card-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <div class="card-title">Ageing/HFRD Tracker</div>
+            <div class="card-desc">Monitor shipment ageing and High Frequency Return Defects.</div>
+          </a>
+
         </div>
       </div>
 
@@ -843,5 +850,624 @@
       closeModal('associateModal');
     }
   </script>
+</body>
+</html>
+```[cite: 1]
+
+<FollowUp>
+Is there anything else you would like to add or customize on the dashboard portal?
+</FollowUp>
+
+<ElicitationsGroup>
+</ElicitationsGroup> if (assocEntries.length === 0) {
+                    assocTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">No active associates found for "${titleLabel}".</td></tr>`;
+                    assocTableFooter.classList.add('hidden');
+                } else {
+                    let totalException = 0;
+                    let totalVolume = 0;
+                    let totalAgeing5 = 0;
+                    let totalCritical10 = 0;
+                    let totalAgeingSum = 0;
+                    let overallMaxAgeing = 0;
+
+                    assocTableBody.innerHTML = assocEntries.map(item => {
+                        totalException += item.exceptionCount;
+                        totalVolume += item.totalAssigned;
+                        totalAgeing5 += item.ageing5Count;
+                        totalCritical10 += item.criticalAgeingCount;
+                        totalAgeingSum += item.totalAgeing;
+                        if (item.maxAgeing > overallMaxAgeing) overallMaxAgeing = item.maxAgeing;
+
+                        const hasCrit = item.criticalAgeingCount > 0;
+                        const rowClass = hasCrit ? 'bg-rose-950/20 border-l-4 border-rose-500' : (item.ageing5Count > 0 ? 'bg-amber-950/20 border-l-4 border-amber-500' : 'hover:bg-slate-800/60');
+
+                        return `
+                            <tr class="${rowClass}">
+                                <td class="px-4 py-3 font-semibold text-slate-200 flex items-center gap-2">
+                                    ${item.name}
+                                    ${hasCrit ? '<span class="bg-rose-900/80 text-rose-300 border border-rose-600 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 animate-pulse"><i class="fa-solid fa-triangle-exclamation"></i> Critical &gt;10D</span>' : ''}
+                                </td>
+                                <td class="px-4 py-3 ${isCrit10View ? 'text-rose-400' : (isDataView ? 'text-teal-400' : 'text-amber-400')} font-extrabold text-sm">${item.exceptionCount}</td>
+                                <td class="px-4 py-3 font-semibold text-slate-300">${item.avgAgeing} Days</td>
+                                <td class="px-4 py-3 font-bold ${item.maxAgeing > 10 ? 'text-rose-400' : (item.maxAgeing > 5 ? 'text-amber-400' : 'text-slate-300')}">
+                                    ${item.maxAgeing} Days
+                                </td>
+                                <td class="px-4 py-3 font-bold ${item.ageing5Count > 0 ? 'text-amber-400' : 'text-slate-500'}">
+                                    ${item.ageing5Count > 0 ? item.ageing5Count : '0'}
+                                </td>
+                                <td class="px-4 py-3 font-extrabold ${item.criticalAgeingCount > 0 ? 'text-rose-400' : 'text-slate-500'}">
+                                    ${item.criticalAgeingCount > 0 ? `⚠️ ${item.criticalAgeingCount}` : '0'}
+                                </td>
+                                <td class="px-4 py-3 font-mono text-slate-300">${item.totalAssigned}</td>
+                                <td class="px-4 py-3 text-right">
+                                    <button onclick="viewAssociateTrackingIds('${item.name}', '${activeSelectedCardStatus}', '${isCrit10View ? '10' : (isAgeing5View ? '5' : '')}')" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded text-[11px] font-semibold flex items-center gap-1.5 ml-auto shadow-sm">
+                                        <i class="fa-solid fa-boxes-stacked"></i> View IDs (${item.exceptionCount})
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    const overallAvgAgeing = totalException > 0 ? (totalAgeingSum / totalException).toFixed(1) : 0;
+                    assocTableFooter.classList.remove('hidden');
+                    assocTableFooter.innerHTML = `
+                        <tr class="bg-slate-800 border-t-2 border-slate-700 font-extrabold text-white">
+                            <td class="px-4 py-3">TOTAL ${titleLabel.toUpperCase()}</td>
+                            <td class="px-4 py-3 ${isCrit10View ? 'text-rose-400' : (isDataView ? 'text-teal-400' : 'text-amber-400')} text-sm">${totalException}</td>
+                            <td class="px-4 py-3 text-slate-300">${overallAvgAgeing} Days</td>
+                            <td class="px-4 py-3 ${overallMaxAgeing > 10 ? 'text-rose-400' : 'text-amber-400'}">${overallMaxAgeing} Days</td>
+                            <td class="px-4 py-3 text-amber-400">${totalAgeing5}</td>
+                            <td class="px-4 py-3 text-rose-400">${totalCritical10}</td>
+                            <td class="px-4 py-3 font-mono">${totalVolume}</td>
+                            <td class="px-4 py-3 text-right">
+                                <button onclick="viewAssociateTrackingIds('', '${activeSelectedCardStatus}', '${isCrit10View ? '10' : (isAgeing5View ? '5' : '')}')" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-[11px] font-semibold">
+                                    View All IDs
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }
+
+            } else {
+                m1TableTitle.innerHTML = `<i class="fa-solid fa-users text-blue-400"></i> Active Exception Performance Breakdown`;
+                clearM1CardFilterBtn.classList.add('hidden');
+
+                m1TableHeader.innerHTML = `
+                    <tr>
+                        <th class="px-4 py-3 sort-header" onclick="sortM1Table('name')">Associate Name <i class="fa-solid fa-sort text-slate-500 ml-1"></i></th>
+                        <th class="px-4 py-3 sort-header" onclick="sortM1Table('failed')">Delivery Failed <i class="fa-solid fa-sort text-slate-500 ml-1"></i></th>
+                        <th class="px-4 py-3 sort-header" onclick="sortM1Table('rejected')">Delivery Rejected <i class="fa-solid fa-sort text-slate-500 ml-1"></i></th>
+                        <th class="px-4 py-3 sort-header" onclick="sortM1Table('outOnRoad')">Out On Road <i class="fa-solid fa-sort text-slate-500 ml-1"></i></th>
+                        <th class="px-4 py-3 sort-header" onclick="sortM1Table('ageing5')">Ageing &gt;5D <i class="fa-solid fa-sort text-slate-500 ml-1"></i></th>
+                        <th class="px-4 py-3 sort-header" onclick="sortM1Table('criticalAgeing10')">Critical &gt;10D <i class="fa-solid fa-sort text-slate-500 ml-1"></i></th>
+                        <th class="px-4 py-3 sort-header" onclick="sortM1Table('total')">Active Exceptions <i class="fa-solid fa-sort text-slate-500 ml-1"></i></th>
+                        <th class="px-4 py-3 text-right">Tracking IDs</th>
+                    </tr>
+                `;
+
+                let assocEntries = Object.entries(associateStats).map(([name, stats]) => {
+                    const rowActiveTotal = stats.failed + stats.rejected + stats.outOnRoad;
+                    return {
+                        name: name,
+                        failed: stats.failed,
+                        rejected: stats.rejected,
+                        outOnRoad: stats.outOnRoad,
+                        ageing5: stats.ageing5,
+                        criticalAgeing10: stats.criticalAgeing10,
+                        total: rowActiveTotal
+                    };
+                });
+
+                if (currentM1Sort.column) {
+                    assocEntries.sort((a, b) => {
+                        let valA = a[currentM1Sort.column];
+                        let valB = b[currentM1Sort.column];
+                        let comp = typeof valA === 'string' ? valA.localeCompare(valB, undefined, { numeric: true }) : parseFloat(valA) - parseFloat(valB);
+                        return currentM1Sort.asc ? comp : -comp;
+                    });
+                }
+
+                currentM1SummaryData = [...assocEntries];
+
+                if (assocEntries.length === 0) {
+                    assocTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">No active exceptions found.</td></tr>`;
+                    assocTableFooter.classList.add('hidden');
+                } else {
+                    let grandFailed = 0, grandRejected = 0, grandOutOnRoad = 0, grandActiveVol = 0, grandAgeing5 = 0, grandCritical10 = 0;
+
+                    assocTableBody.innerHTML = assocEntries.map(item => {
+                        grandFailed += item.failed;
+                        grandRejected += item.rejected;
+                        grandOutOnRoad += item.outOnRoad;
+                        grandActiveVol += item.total;
+                        grandAgeing5 += item.ageing5;
+                        grandCritical10 += item.criticalAgeing10;
+
+                        return `
+                            <tr class="hover:bg-slate-800/60">
+                                <td class="px-4 py-3 font-semibold text-slate-200">${item.name}</td>
+                                <td class="px-4 py-3 text-rose-400 font-bold">${item.failed}</td>
+                                <td class="px-4 py-3 text-amber-400 font-bold">${item.rejected}</td>
+                                <td class="px-4 py-3 text-indigo-400 font-bold">${item.outOnRoad}</td>
+                                <td class="px-4 py-3 font-bold ${item.ageing5 > 0 ? 'text-amber-400' : 'text-slate-500'}">
+                                    ${item.ageing5 > 0 ? item.ageing5 : '0'}
+                                </td>
+                                <td class="px-4 py-3 font-extrabold ${item.criticalAgeing10 > 0 ? 'text-rose-400' : 'text-slate-500'}">
+                                    ${item.criticalAgeing10 > 0 ? `⚠️ ${item.criticalAgeing10}` : '0'}
+                                </td>
+                                <td class="px-4 py-3 font-mono font-bold text-white">${item.total}</td>
+                                <td class="px-4 py-3 text-right">
+                                    <button onclick="viewAssociateTrackingIds('${item.name}')" class="bg-slate-700 hover:bg-slate-600 text-blue-400 px-2.5 py-1 rounded text-[11px] font-semibold flex items-center gap-1.5 ml-auto">
+                                        <i class="fa-solid fa-boxes-stacked"></i> View IDs
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    assocTableFooter.classList.remove('hidden');
+                    assocTableFooter.innerHTML = `
+                        <tr class="bg-slate-800 border-t-2 border-slate-700 font-extrabold text-white">
+                            <td class="px-4 py-3">TOTAL EXCEPTIONS</td>
+                            <td class="px-4 py-3 text-rose-400">${grandFailed}</td>
+                            <td class="px-4 py-3 text-amber-400">${grandRejected}</td>
+                            <td class="px-4 py-3 text-indigo-400">${grandOutOnRoad}</td>
+                            <td class="px-4 py-3 text-amber-400">${grandAgeing5}</td>
+                            <td class="px-4 py-3 text-rose-400 font-extrabold">${grandCritical10}</td>
+                            <td class="px-4 py-3 font-mono">${grandActiveVol}</td>
+                            <td class="px-4 py-3"></td>
+                        </tr>
+                    `;
+                }
+            }
+
+            populateMultiSelectDropdowns();
+            applyFiltersAndRender();
+        }
+
+        function copyWhatsAppTableImage() {
+            const tableContainer = document.getElementById('m1ReportCard');
+            if (!tableContainer || currentM1SummaryData.length === 0) return;
+
+            html2canvas(tableContainer, { scale: 4, backgroundColor: '#1e293b' }).then(canvas => {
+                canvas.toBlob(blob => {
+                    try {
+                        const item = new ClipboardItem({ 'image/png': blob });
+                        navigator.clipboard.write([item]);
+                    } catch (e) {
+                        const link = document.createElement('a');
+                        link.download = `Delivery_Report_4K_${module1DateFilter.value || 'Summary'}.png`;
+                        link.href = canvas.toDataURL();
+                        link.click();
+                    }
+                });
+            });
+        }
+
+        function renderTrackingTable(data) {
+            const trackingTable = document.getElementById('trackingDetailsTable');
+            if (data.length === 0) {
+                trackingTable.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400">No active exception records found.</td></tr>`;
+                return;
+            }
+
+            trackingTable.innerHTML = data.map(item => {
+                const cleanTid = sanitizeTrackingId(item.trackingId);
+                const effectiveSt = getEffectiveStatus(item);
+                const ageing = calculateAgeingDays(item.inductedDate);
+                const hasAgeing5 = isAgeing5(effectiveSt, item.inductedDate);
+                const hasCritical10 = isCriticalAgeing10(effectiveSt, item.inductedDate);
+                const hasOverride = overrideMap[cleanTid] && overrideMap[cleanTid].overrideStatus;
+
+                let badgeClass = 'bg-slate-800 text-slate-300 border border-slate-700';
+                if (effectiveSt === 'Delivery Failed' || effectiveSt === 'Undeliverable') badgeClass = 'bg-rose-950 text-rose-300 border border-rose-800';
+                else if (effectiveSt === 'Hold For Redelivery') badgeClass = 'bg-amber-950 text-amber-300 border border-amber-800';
+                else if (effectiveSt === 'Hold For Customer Request') badgeClass = 'bg-cyan-950 text-cyan-300 border border-cyan-800';
+                else if (effectiveSt === 'Ready For Fc Return / RTO Pending') badgeClass = 'bg-purple-950 text-purple-300 border border-purple-800';
+                else if (effectiveSt === 'Core - Dwell') badgeClass = 'bg-blue-950 text-blue-300 border border-blue-800';
+                else if (effectiveSt === 'Damaged' || effectiveSt === 'At Wrong station') badgeClass = 'bg-orange-950 text-orange-300 border border-orange-800';
+                else if (effectiveSt === 'TT Raised') badgeClass = 'bg-amber-900 text-amber-200 border border-amber-500 font-bold';
+                else if (effectiveSt === 'Physically Not Available') badgeClass = 'bg-red-950 text-red-300 border border-red-600 font-bold';
+
+                let ageingDisplay = `<span class="text-slate-300">${ageing} D</span>`;
+                if (effectiveSt === 'Physically Not Available') {
+                    ageingDisplay = `<span class="text-slate-500">${ageing} D (Excluded)</span>`;
+                } else if (hasCritical10) {
+                    ageingDisplay = `<span class="bg-rose-950 text-rose-300 border border-rose-700 px-2 py-0.5 rounded text-[10px] font-extrabold flex items-center gap-1 w-max animate-pulse"><i class="fa-solid fa-triangle-exclamation"></i> ${ageing} D (&gt;10D)</span>`;
+                } else if (hasAgeing5) {
+                    ageingDisplay = `<span class="bg-amber-950 text-amber-300 border border-amber-700 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 w-max"><i class="fa-solid fa-clock"></i> ${ageing} D (&gt;5D)</span>`;
+                }
+
+                return `
+                    <tr class="border-b border-slate-800 hover:bg-slate-800/40 ${hasCritical10 ? 'bg-rose-950/25' : (hasAgeing5 ? 'bg-amber-950/15' : '')}">
+                        <td class="px-4 py-3 font-medium text-slate-300">${item.week}</td>
+                        <td class="px-4 py-3 text-slate-400">${formatDateOnly(item.inductedDate)}</td>
+                        <td class="px-4 py-3 font-bold">
+                            ${ageingDisplay}
+                        </td>
+                        <td class="px-4 py-3 font-mono text-white font-semibold">${item.trackingId}</td>
+                        <td class="px-4 py-3 text-slate-200 font-medium">${item.associateName}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.type === 'COD' ? 'bg-amber-950 text-amber-300 border border-amber-800' : 'bg-blue-950 text-blue-300 border border-blue-800'}">
+                                ${item.type}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${badgeClass}">
+                                ${effectiveSt}
+                            </span>
+                            ${hasOverride ? `<span class="block text-[9px] text-amber-400 mt-0.5"><i class="fa-solid fa-user-pen"></i> Overridden</span>` : ''}
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            ${hasOverride ? `
+                                <div class="flex items-center justify-center gap-1">
+                                    <button onclick="openManualOverrideModal('${cleanTid}')" class="bg-amber-950/70 hover:bg-amber-900 border border-amber-600/80 text-amber-300 px-2.5 py-1 rounded text-[11px] font-bold flex items-center gap-1 transition">
+                                        <i class="fa-solid fa-pen-to-square text-[10px]"></i> Edit Override
+                                    </button>
+                                </div>
+                            ` : `
+                                <button onclick="openManualOverrideModal('${cleanTid}')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 hover:text-white px-2.5 py-1 rounded text-[11px] font-semibold flex items-center gap-1.5 mx-auto transition">
+                                    <i class="fa-solid fa-shield-halved text-amber-400 text-[10px]"></i> Set Override
+                                </button>
+                            `}
+                        </td>
+                        <td class="px-4 py-3 text-slate-400">${formatDateOnly(item.lastUpdatedTime)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderTtTable() {
+            const tableBody = document.getElementById('ttDetailsTable');
+            const search = (document.getElementById('ttSearchInput')?.value || '').toLowerCase();
+
+            const ttItems = currentDataset.filter(item => {
+                const eff = getEffectiveStatus(item);
+                return eff === 'TT Raised' || eff === 'Physically Not Available';
+            });
+
+            let filteredTt = ttItems;
+            if (search) {
+                filteredTt = ttItems.filter(i => {
+                    const cleanTid = sanitizeTrackingId(i.trackingId);
+                    const ov = overrideMap[cleanTid] || {};
+                    return cleanTid.toLowerCase().includes(search) || (ov.remark || '').toLowerCase().includes(search);
+                });
+            }
+
+            if (filteredTt.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">No shipments in TT Raised or Physically Not Available state.</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = filteredTt.map(item => {
+                const cleanTid = sanitizeTrackingId(item.trackingId);
+                const ov = overrideMap[cleanTid] || { overrideStatus: getEffectiveStatus(item), ttStatus: 'Not-Resolved', remark: '' };
+                const ageing = calculateAgeingDays(item.inductedDate);
+                const ttStatus = ov.ttStatus || 'Not-Resolved';
+
+                let selectClass = 'bg-rose-950 text-rose-300 border-rose-600';
+                if (ttStatus === 'Resolved') selectClass = 'bg-emerald-950 text-emerald-300 border-emerald-600';
+                else if (ttStatus === 'Orphan Processed') selectClass = 'bg-amber-950 text-amber-300 border-amber-600';
+
+                return `
+                    <tr class="hover:bg-slate-800/60">
+                        <td class="px-4 py-3 font-mono font-bold text-white">${item.trackingId}</td>
+                        <td class="px-4 py-3 text-slate-300">${formatDateOnly(item.inductedDate)}</td>
+                        <td class="px-4 py-3 font-extrabold ${ageing > 10 ? 'text-rose-400' : (ageing > 5 ? 'text-amber-400' : 'text-slate-300')}">
+                            ${ageing} Days ${ageing > 10 ? '⚠️' : ''}
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${ov.overrideStatus === 'TT Raised' ? 'bg-amber-900 text-amber-200 border border-amber-600' : 'bg-red-950 text-red-200 border border-red-700'}">
+                                ${ov.overrideStatus}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <select onchange="updateTtStatus('${cleanTid}', this.value)" class="border rounded p-1 text-xs font-bold ${selectClass} focus:outline-none">
+                                <option value="Resolved" class="bg-slate-900 text-emerald-400" ${ttStatus === 'Resolved' ? 'selected' : ''}>🟢 Resolved</option>
+                                <option value="Not-Resolved" class="bg-slate-900 text-rose-400" ${ttStatus === 'Not-Resolved' ? 'selected' : ''}>🔴 Not-Resolved</option>
+                                <option value="Orphan Processed" class="bg-slate-900 text-amber-400" ${ttStatus === 'Orphan Processed' ? 'selected' : ''}>🟡 Orphan Processed</option>
+                            </select>
+                        </td>
+                        <td class="px-4 py-3">
+                            <input type="text" value="${ov.remark || ''}" onblur="updateTtRemark('${cleanTid}', this.value)" placeholder="Type remark here..." class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-xs text-white focus:ring-1 focus:ring-amber-500 outline-none">
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <button onclick="resetSingleOverrideFromModule3('${cleanTid}')" title="Revert override to default" class="text-slate-500 hover:text-rose-400 text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 transition">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function setHfcrTableFilter(filterKey) {
+            hfcrTableCurrentFilter = filterKey;
+            
+            ['ALL', 'VERIFIED', 'MISSING', 'UNEXPECTED'].forEach(k => {
+                const btn = document.getElementById(`hfcrBtnFilter_${k}`);
+                if (k === filterKey) {
+                    btn.className = 'text-xs px-3 py-1.5 rounded-lg font-bold bg-cyan-600 text-white transition';
+                } else {
+                    btn.className = 'text-xs px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
+                }
+            });
+
+            renderHfcrTable();
+        }
+
+        async function processManualHfcrScan() {
+            const raw = hfcrScanInput.value.trim();
+            if (!raw) return;
+
+            const cleanScanTid = sanitizeTrackingId(raw);
+            const key = cleanScanTid.toUpperCase();
+
+            const match = currentDataset.find(r => sanitizeTrackingId(r.trackingId).toUpperCase() === key);
+            const nowTime = new Date().toLocaleString();
+
+            hfcrScannedMap[cleanScanTid] = nowTime;
+            localStorage.setItem(STORAGE_KEY_HFCR_SCANS, JSON.stringify(hfcrScannedMap));
+
+            hfcrScanInput.value = '';
+            hfcrScanFeedback.classList.remove('hidden', 'text-emerald-400', 'text-amber-400', 'text-rose-400');
+
+            if (match) {
+                const effectiveSt = getEffectiveStatus(match);
+                if (effectiveSt === 'Hold For Customer Request') {
+                    hfcrScanFeedback.className = "mt-2 text-[11px] font-bold text-emerald-400 flex items-center gap-1.5";
+                    hfcrScanFeedback.innerHTML = `<i class="fa-solid fa-circle-check"></i> Verified: TID ${cleanScanTid} matched system HFCR inventory!`;
+                } else {
+                    hfcrScanFeedback.className = "mt-2 text-[11px] font-bold text-amber-400 flex items-center gap-1.5";
+                    hfcrScanFeedback.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Warning: TID ${cleanScanTid} scanned, but its system status is "${effectiveSt}" (Not HFCR).`;
+                }
+            } else {
+                hfcrScanFeedback.className = "mt-2 text-[11px] font-bold text-rose-400 flex items-center gap-1.5";
+                hfcrScanFeedback.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Foreign / Non-Exception Scan: TID ${cleanScanTid} is not present in active exceptions.`;
+            }
+
+            renderHfcrTable();
+            await pushCloudData();
+
+            setTimeout(() => {
+                if (hfcrScanInput) hfcrScanInput.focus();
+            }, 50);
+        }
+
+        async function removeHfcrScan(tid) {
+            const cleanTid = sanitizeTrackingId(tid);
+            delete hfcrScannedMap[cleanTid];
+            localStorage.setItem(STORAGE_KEY_HFCR_SCANS, JSON.stringify(hfcrScannedMap));
+            renderHfcrTable();
+            await pushCloudData();
+        }
+
+        async function clearHfcrPhysicalScans() {
+            if (confirm("Clear all physical scan records for HFCR?")) {
+                hfcrScannedMap = {};
+                localStorage.removeItem(STORAGE_KEY_HFCR_SCANS);
+                renderHfcrTable();
+                await pushCloudData();
+            }
+        }
+
+        function renderHfcrTable() {
+            const tableBody = document.getElementById('hfcrAuditTableBody');
+            const search = (document.getElementById('hfcrTableSearchInput')?.value || '').toLowerCase();
+
+            const systemHfcrItems = currentDataset.filter(item => getEffectiveStatus(item) === 'Hold For Customer Request');
+            const systemHfcrTidSet = new Set(systemHfcrItems.map(i => sanitizeTrackingId(i.trackingId).toUpperCase()));
+
+            const unexpectedScans = Object.keys(hfcrScannedMap).filter(scannedTid => {
+                return !systemHfcrTidSet.has(scannedTid.toUpperCase());
+            });
+
+            let verifiedCount = 0;
+            let missingCount = 0;
+
+            systemHfcrItems.forEach(item => {
+                const cleanTid = sanitizeTrackingId(item.trackingId);
+                if (hfcrScannedMap[cleanTid]) {
+                    verifiedCount++;
+                } else {
+                    missingCount++;
+                }
+            });
+
+            document.getElementById('hfcrTotalSystemCount').innerText = systemHfcrItems.length;
+            document.getElementById('hfcrScannedMatchedCount').innerText = verifiedCount;
+            document.getElementById('hfcrMissingCount').innerText = missingCount;
+            document.getElementById('hfcrUnexpectedCount').innerText = unexpectedScans.length;
+
+            let auditRows = [];
+
+            if (hfcrTableCurrentFilter === 'ALL') {
+                auditRows = systemHfcrItems.map(i => ({
+                    type: 'SYSTEM_HFCR',
+                    data: i,
+                    scanned: !!hfcrScannedMap[sanitizeTrackingId(i.trackingId)],
+                    scanTime: hfcrScannedMap[sanitizeTrackingId(i.trackingId)] || 'N/A'
+                }));
+            } else if (hfcrTableCurrentFilter === 'VERIFIED') {
+                auditRows = systemHfcrItems.filter(i => !!hfcrScannedMap[sanitizeTrackingId(i.trackingId)]).map(i => ({
+                    type: 'SYSTEM_HFCR',
+                    data: i,
+                    scanned: true,
+                    scanTime: hfcrScannedMap[sanitizeTrackingId(i.trackingId)] || 'N/A'
+                }));
+            } else if (hfcrTableCurrentFilter === 'MISSING') {
+                auditRows = systemHfcrItems.filter(i => !hfcrScannedMap[sanitizeTrackingId(i.trackingId)]).map(i => ({
+                    type: 'SYSTEM_HFCR',
+                    data: i,
+                    scanned: false,
+                    scanTime: 'Not Scanned'
+                }));
+            } else if (hfcrTableCurrentFilter === 'UNEXPECTED') {
+                auditRows = unexpectedScans.map(tid => {
+                    const match = currentDataset.find(r => sanitizeTrackingId(r.trackingId).toUpperCase() === tid.toUpperCase());
+                    return {
+                        type: 'UNEXPECTED',
+                        data: match || { trackingId: tid, inductedDate: 'N/A', associateName: 'Foreign / Not in CSV', status: 'Unknown' },
+                        scanned: true,
+                        scanTime: hfcrScannedMap[tid] || 'N/A'
+                    };
+                });
+            }
+
+            if (search) {
+                auditRows = auditRows.filter(row => {
+                    const tid = sanitizeTrackingId(row.data.trackingId).toLowerCase();
+                    const assoc = (row.data.associateName || '').toLowerCase();
+                    return tid.includes(search) || assoc.includes(search);
+                });
+            }
+
+            if (auditRows.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">No records found matching current HFCR audit criteria.</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = auditRows.map(row => {
+                const item = row.data;
+                const cleanTid = sanitizeTrackingId(item.trackingId);
+                const ageing = item.inductedDate !== 'N/A' ? calculateAgeingDays(item.inductedDate) : 0;
+                
+                let checkBadge = '';
+                if (row.type === 'UNEXPECTED') {
+                    checkBadge = `<span class="bg-amber-950 text-amber-300 border border-amber-600 px-2 py-0.5 rounded-full text-[10px] font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Unexpected Scan (${item.status})</span>`;
+                } else if (row.scanned) {
+                    checkBadge = `<span class="bg-emerald-950 text-emerald-300 border border-emerald-600 px-2 py-0.5 rounded-full text-[10px] font-bold"><i class="fa-solid fa-circle-check mr-1"></i> Physically Verified</span>`;
+                } else {
+                    checkBadge = `<span class="bg-rose-950 text-rose-300 border border-rose-600 px-2 py-0.5 rounded-full text-[10px] font-bold"><i class="fa-solid fa-clock mr-1"></i> Missing Scan (In System Only)</span>`;
+                }
+
+                return `
+                    <tr class="hover:bg-slate-800/60 ${row.type === 'UNEXPECTED' ? 'bg-amber-950/10' : (!row.scanned ? 'bg-rose-950/10' : '')}">
+                        <td class="px-4 py-3 font-mono font-bold text-white">${item.trackingId}</td>
+                        <td class="px-4 py-3 text-slate-300">${formatDateOnly(item.inductedDate)}</td>
+                        <td class="px-4 py-3 font-extrabold ${ageing > 10 ? 'text-rose-400' : (ageing > 5 ? 'text-amber-400' : 'text-slate-300')}">
+                            ${item.inductedDate !== 'N/A' ? `${ageing} Days` : 'N/A'}
+                        </td>
+                        <td class="px-4 py-3 text-slate-300 font-medium">${item.associateName}</td>
+                        <td class="px-4 py-3">${checkBadge}</td>
+                        <td class="px-4 py-3 text-slate-400 font-mono text-[11px]">${row.scanTime}</td>
+                        <td class="px-4 py-3 text-right">
+                            ${row.scanned ? `
+                                <button onclick="removeHfcrScan('${cleanTid}')" title="Undo Physical Scan" class="text-slate-400 hover:text-rose-400 text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 transition">
+                                    <i class="fa-solid fa-trash-can mr-1"></i> Undo
+                                </button>
+                            ` : `
+                                <button onclick="hfcrScanInput.value='${cleanTid}'; processManualHfcrScan();" class="text-cyan-400 hover:text-cyan-300 text-xs px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 transition font-semibold">
+                                    <i class="fa-solid fa-check mr-1"></i> Mark Scanned
+                                </button>
+                            `}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function exportHfcrAuditCsv() {
+            const systemHfcrItems = currentDataset.filter(item => getEffectiveStatus(item) === 'Hold For Customer Request');
+            if (systemHfcrItems.length === 0 && Object.keys(hfcrScannedMap).length === 0) {
+                return alert('No HFCR data or physical scans available to export.');
+            }
+
+            const exportData = systemHfcrItems.map(item => {
+                const cleanTid = sanitizeTrackingId(item.trackingId);
+                const isScanned = !!hfcrScannedMap[cleanTid];
+                return {
+                    'TID': item.trackingId,
+                    'Inducted Date': formatDateOnly(item.inductedDate),
+                    'Ageing Days': calculateAgeingDays(item.inductedDate),
+                    'Associate Name': item.associateName,
+                    'System Status': getEffectiveStatus(item),
+                    'Cross-Check Status': isScanned ? 'Physically Verified' : 'Missing Physical Scan',
+                    'Scan Timestamp': hfcrScannedMap[cleanTid] || 'N/A'
+                };
+            });
+
+            const systemSet = new Set(systemHfcrItems.map(i => sanitizeTrackingId(i.trackingId).toUpperCase()));
+            Object.keys(hfcrScannedMap).forEach(tid => {
+                if (!systemSet.has(tid.toUpperCase())) {
+                    const match = currentDataset.find(r => sanitizeTrackingId(r.trackingId).toUpperCase() === tid.toUpperCase());
+                    exportData.push({
+                        'TID': tid,
+                        'Inducted Date': match ? formatDateOnly(match.inductedDate) : 'N/A',
+                        'Ageing Days': match ? calculateAgeingDays(match.inductedDate) : 'N/A',
+                        'Associate Name': match ? match.associateName : 'Foreign / Not in CSV',
+                        'System Status': match ? getEffectiveStatus(match) : 'Unknown',
+                        'Cross-Check Status': 'Unexpected Physical Scan (Not HFCR in System)',
+                        'Scan Timestamp': hfcrScannedMap[tid]
+                    });
+                }
+            });
+
+            const csv = Papa.unparse(exportData);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute('download', `HFCR_CrossCheck_Audit_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportTtTableCsv() {
+            const ttItems = currentDataset.filter(item => {
+                const eff = getEffectiveStatus(item);
+                return eff === 'TT Raised' || eff === 'Physically Not Available';
+            });
+
+            if (ttItems.length === 0) return alert('No TT Raised data to export.');
+
+            const exportData = ttItems.map(item => {
+                const cleanTid = sanitizeTrackingId(item.trackingId);
+                const ov = overrideMap[cleanTid] || {};
+                return {
+                    'TID': item.trackingId,
+                    'Induct Date': formatDateOnly(item.inductedDate),
+                    'Ageing Days': calculateAgeingDays(item.inductedDate),
+                    'Override Type': ov.overrideStatus || getEffectiveStatus(item),
+                    'TT Status': ov.ttStatus || 'Not-Resolved',
+                    'Remark': ov.remark || ''
+                };
+            });
+
+            const csv = Papa.unparse(exportData);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute('download', `TT_Raised_Report_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        exportCsvBtn.addEventListener('click', () => {
+            if (currentlyFilteredData.length === 0) return alert('No filtered data available to export!');
+            
+            const exportData = currentlyFilteredData.map(item => ({
+                'Week': item.week,
+                'Inducted Date': formatDateOnly(item.inductedDate),
+                'Ageing Days': calculateAgeingDays(item.inductedDate),
+                'Tracking ID': item.trackingId,
+                'Associate Name': item.associateName,
+                'Type': item.type,
+                'Current Status': getEffectiveStatus(item),
+                'Last Updated Time': formatDateOnly(item.lastUpdatedTime)
+            }));
+
+            const csv = Papa.unparse(exportData);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute('download', `Active_Exceptions_Export_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    </script>
 </body>
 </html>
